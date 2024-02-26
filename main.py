@@ -1,36 +1,23 @@
 import pandas as pd
-import numpy as np
-from sklearn.model_selection import train_test_split
+from sklearn.feature_selection import RFE
+from sklearn.linear_model import LogisticRegression
 
-# Read the dataset
+# Đọc dữ liệu từ file CSV
 data = pd.read_csv('Malware_dataset.csv')
 
-# Data preprocessing
-data = data.replace(to_replace=r'[!@#$%^&*()_+{}\[\]:;<>,.?~\\|]', value=np.nan, regex=True)
-data = data.fillna(value=np.nan)
-data['classification'] = data['classification'].map({'benign': 0, 'malware': 1})
-data = data.drop(columns=['hash'])
+# Tách các đặc trưng và biến mục tiêu
+X = data.drop(columns=['hash', 'classification'])  # Thay 'target_column' bằng tên cột của biến mục tiêu
+Y = data['classification']
 
-# Split the data
-# Split ratio: 80% training, 20% testing
-X_train_80, X_test_80, y_train_80, y_test_80 = train_test_split(data.drop(columns=['classification']),
-                                                    data['classification'],
-                                                    test_size=0.2,
-                                                    random_state=42)
+# Khởi tạo mô hình Logistic Regression
+model = LogisticRegression()
 
-# Split ratio: 75% training, 25% testing
-X_train_75, X_test_75, y_train_75, y_test_75 = train_test_split(data.drop(columns=['classification']),
-                                                              data['classification'],
-                                                              test_size=0.25,
-                                                              random_state=42)
+# Khởi tạo RFE với mô hình và số lượng đặc trưng mong muốn
+rfe = RFE(model, n_features_to_select=10)
 
-# Split ratio: 70% training, 30% testing
-X_train_70, X_test_70, y_train_70, y_test_70 = train_test_split(data.drop(columns=['classification']),
-                                                              data['classification'],
-                                                              test_size=0.3,
-                                                              random_state=42)
+# Fit RFE với dữ liệu
+rfe.fit(X, Y)
 
-selected_features = ['usage_counter', 'prio', 'normal_prio', 'policy', 'vm_pgoff', 'task_size', 'cached_hole_size',
-                     'hiwater_rss', 'nr_ptes', 'last_interval', 'min_flt', 'lock', 'cgtime', 'signal_nvcsw']
-
-print(data)
+# In ra các đặc trưng được chọn
+selected_features = X.columns[rfe.support_]
+print("Selected features:", selected_features)
